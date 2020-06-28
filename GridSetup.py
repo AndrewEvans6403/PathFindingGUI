@@ -1,4 +1,7 @@
+# Andrew Evans 
 import pygame as pg
+vec = pg.math.Vector2
+
 
 TILESIZE = 40
 GRIDWIDTH = 28
@@ -31,10 +34,23 @@ class SquareGrid:
         # used to calculate neighbors of given node
         self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
 
-    def find_neighbors(self, node):
+    def in_bounds(self, node):
+         return 0 <= node.x < self.width and 0 <= node.y < self.height
+
+    def passable(self, node):
+        return node not in self.walls
+
+    def find_neighbors(self, node,):
         neighbors = [node + connection for connection in self.connections]
         # walls / edge cases
+        neighbors = filter(self.inbounds,neighbors)
+        neighbors = filter(self.passable, neighbors)
+        return neighbors
 
+    def draw(self):
+        for wall in self.walls:
+            rect = pg.Rect(wall * TILESIZE, (TILESIZE, TILESIZE))
+            pg.draw.rect(screen, LIGHTGRAY, rect)
 
 def draw_grid():
     for x in range(0, WIDTH, TILESIZE):
@@ -53,3 +69,9 @@ while running:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
                 running = False
+    pg.display.set_caption("{:.2f}".format(clock.get_fps()))
+    screen.fill(DARKGRAY)
+    draw_grid()
+    g.draw()
+    pg.display.flip()
+
