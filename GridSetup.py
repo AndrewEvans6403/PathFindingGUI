@@ -65,6 +65,8 @@ for wall in walls:
     grid.walls.append(vec(wall))
 
 running = True
+
+#game loop
 while running:
     clock.tick(FPS)
     for event in pg.event.get():
@@ -77,7 +79,7 @@ while running:
                 # dump the wall list for saving
                 print([(int(loc.x), int(loc.y)) for loc in grid.walls])
         if event.type == pg.MOUSEBUTTONDOWN:
-            mpos = vec(pg.mouse.get_pos())
+            mpos = vec(pg.mouse.get_pos()) // TILESIZE
             if event.button == 1:
                 if mpos in grid.walls:
                     grid.walls.remove(mpos)
