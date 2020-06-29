@@ -68,7 +68,7 @@ running = True
 while running:
     clock.tick(FPS)
     for event in pg.event.get():
-        if event.type == pg.QUIT():
+        if event.type == pg.QUIT:
             running = False
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
