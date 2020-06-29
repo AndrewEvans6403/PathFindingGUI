@@ -76,7 +76,7 @@ while running:
             if event.key == pg.K_ESCAPE:
                 running = False
             if event.key == pg.K_m:
-                # dump the wall list for saving
+                # prints the wall list to console for saving purposes
                 print([(int(loc.x), int(loc.y)) for loc in grid.walls])
         if event.type == pg.MOUSEBUTTONDOWN:
             mpos = vec(pg.mouse.get_pos()) // TILESIZE
