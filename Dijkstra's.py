@@ -1,5 +1,6 @@
 import pygame as pg
 from os import path
+import heapq
 from collections import deque
 
 vec = pg.math.Vector2
@@ -26,15 +27,26 @@ pg.init()
 screen = pg.display.set_mode((WIDTH, HEIGHT))
 clock = pg.time.Clock()
 
+fontName = pg.font.match_font('hack')
 
+
+def drawText(text, size, color, x, y, align="topleft"):
+    font = pg.font.Font(fontName, size)
+    textSurface = font.render(text, True, color)
+    textRect = textSurface.get_rect(**{align: (x, y)})
+    screen.blit(textSurface, textRect)
+
+
+# initialize grid
 class SquareGrid:
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.walls = []
+        # regular movement
         self.connections = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
         # comment/uncomment this for diagonals:
-        # self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
+        self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
 
     def in_bounds(self, node):
         return 0 <= node.x < self.width and 0 <= node.y < self.height
@@ -44,9 +56,6 @@ class SquareGrid:
 
     def find_neighbors(self, node):
         neighbors = [node + connection for connection in self.connections]
-        # don't use this for diagonals:
-        if (node.x + node.y) % 2:
-            neighbors.reverse()
         neighbors = filter(self.in_bounds, neighbors)
         neighbors = filter(self.passable, neighbors)
         return neighbors
@@ -57,14 +66,43 @@ class SquareGrid:
             pg.draw.rect(screen, LIGHTGRAY, rect)
 
 
-def draw_grid():
+# makes weighted graph super class of square grid
+class WeightedGrid(SquareGrid):
+    def __init__(self, width, height):
+        super.__init__(width, height)
+        self.weights = {}
+
+    # calc cost of moving add 10 for horizontal/vertical and 14 for diagonal movement
+    def cost(self, fromNode, toNode):
+        if (toNode - fromNode).length_squared() == 1:
+            return self.weights.get(toNode, 0) + 10
+        else:
+            return self.weights.get(toNode, 0) + 14
+
+
+# class to make working with heapq library easier
+class PriorityQueue:
+    def __init__(self):
+        self.nodes = []
+
+    def put(self, node, cost):
+        heapq.heappush(self.nodes, (cost, node))
+
+    def get(self):
+        return heapq.heappop(self.nodes)[1]
+
+    def empty(self):
+        return len(self.nodes) == 0
+
+
+def drawGrid():
     for x in range(0, WIDTH, TILESIZE):
         pg.draw.line(screen, LIGHTGRAY, (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, TILESIZE):
         pg.draw.line(screen, LIGHTGRAY, (0, y), (WIDTH, y))
 
 
-def draw_icons():
+def drawIcons():
     start_center = (goal.x * TILESIZE + TILESIZE / 2, goal.y * TILESIZE + TILESIZE / 2)
     screen.blit(home_img, home_img.get_rect(center=start_center))
     goal_center = (start.x * TILESIZE + TILESIZE / 2, start.y * TILESIZE + TILESIZE / 2)
@@ -75,20 +113,30 @@ def vec2int(v):
     return (int(v.x), int(v.y))
 
 
-def breadth_first_search(graph, start, end):
-    frontier = deque()
-    frontier.append(start)
+def dijkstra(graph, start, end):
+    frontier = PriorityQueue()
+    frontier.put(vec2int(start), 0)
     path = {}
+    cost = {}
     path[vec2int(start)] = None
-    while len(frontier) > 0:
-        current = frontier.popleft()
+    cost[vec2int(start)] = 0
+
+    while not frontier.empty():
+        current = frontier.get()
         if current == end:
             break
-        for next in graph.find_neighbors(current):
-            if vec2int(next) not in path:
-                frontier.append(next)
-                path[vec2int(next)] = current - next
+        for next in graph.find_neighbors(vec(current)):
+            next = vec2int(next)
+            nextCost = cost[current] + graph.cost(current, next)
+            if next not in cost or nextCost < cost[next]:
+                cost[next] = nextCost
+                priority = nextCost
+                frontier.put(next, priority)
+                path[next] = vec(current) - vec(next)
     return path
+
+
+
 
 
 icon_dir = path.join(path.dirname(__file__), 'icons')
@@ -104,7 +152,7 @@ arrow_img = pg.transform.scale(arrow_img, (50, 50))
 for dir in [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)]:
     arrows[dir] = pg.transform.rotate(arrow_img, vec(dir).angle_to(vec(1, 0)))
 
-g = SquareGrid(GRIDWIDTH, GRIDHEIGHT)
+g = WeightedGrid(GRIDWIDTH, GRIDHEIGHT)
 walls = [(10, 7), (11, 7), (12, 7), (13, 7), (14, 7), (15, 7), (16, 7), (7, 7), (6, 7), (5, 7), (5, 5), (5, 6), (1, 6),
          (2, 6), (3, 6), (5, 10), (5, 11), (5, 12), (5, 9), (5, 8), (12, 8), (12, 9), (12, 10), (12, 11), (15, 14),
          (15, 13), (15, 12), (15, 11), (15, 10), (17, 7), (18, 7), (21, 7), (21, 6), (21, 5), (21, 4), (21, 3), (22, 5),
@@ -116,7 +164,7 @@ for wall in walls:
     g.walls.append(vec(wall))
 goal = vec(14, 8)
 start = vec(20, 0)
-path = breadth_first_search(g, goal, start)
+path = dijkstra(g, goal, start)
 
 running = True
 while running:
@@ -141,7 +189,7 @@ while running:
                 start = mpos
             if event.button == 3:
                 goal = mpos
-            path = breadth_first_search(g, goal, start)
+            path = dijkstra(g, goal, start)
 
     pg.display.set_caption("{:.2f}".format(clock.get_fps()))
     screen.fill(DARKGRAY)
@@ -150,7 +198,7 @@ while running:
         x, y = node
         rect = pg.Rect(x * TILESIZE, y * TILESIZE, TILESIZE, TILESIZE)
         pg.draw.rect(screen, SPECIALGREEN, rect)
-    draw_grid()
+    drawGrid()
     g.draw()
     # draw path from start to goal
     current = start + path[vec2int(start)]
@@ -162,5 +210,5 @@ while running:
         screen.blit(img, r)
         # find next in path
         current = current + path[vec2int(current)]
-    draw_icons()
+    drawIcons()
     pg.display.flip()
