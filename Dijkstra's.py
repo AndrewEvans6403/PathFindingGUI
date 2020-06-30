@@ -69,7 +69,7 @@ class SquareGrid:
 # makes weighted graph super class of square grid
 class WeightedGrid(SquareGrid):
     def __init__(self, width, height):
-        super.__init__(width, height)
+        super().__init__(width, height)
         self.weights = {}
 
     # calc cost of moving add 10 for horizontal/vertical and 14 for diagonal movement
