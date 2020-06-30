@@ -74,7 +74,7 @@ class WeightedGrid(SquareGrid):
 
     # calc cost of moving add 10 for horizontal/vertical and 14 for diagonal movement
     def cost(self, fromNode, toNode):
-        if (toNode - fromNode).length_squared() == 1:
+        if (vec(toNode) - vec(fromNode)).length_squared() == 1:
             return self.weights.get(toNode, 0) + 10
         else:
             return self.weights.get(toNode, 0) + 14
