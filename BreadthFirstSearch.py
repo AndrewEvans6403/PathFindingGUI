@@ -36,18 +36,18 @@ class SquareGrid:
         # comment/uncomment this for diagonals:
         # self.connections += [vec(1, 1), vec(-1, 1), vec(1, -1), vec(-1, -1)]
 
-    def in_bounds(self, node):
+    def inBounds(self, node):
         return 0 <= node.x < self.width and 0 <= node.y < self.height
 
     def passable(self, node):
         return node not in self.walls
 
-    def find_neighbors(self, node):
+    def findNeighbors(self, node):
         neighbors = [node + connection for connection in self.connections]
         # don't use this for diagonals:
         if (node.x + node.y) % 2:
             neighbors.reverse()
-        neighbors = filter(self.in_bounds, neighbors)
+        neighbors = filter(self.inBounds, neighbors)
         neighbors = filter(self.passable, neighbors)
         return neighbors
 
@@ -57,18 +57,18 @@ class SquareGrid:
             pg.draw.rect(screen, LIGHTGRAY, rect)
 
 
-def draw_grid():
+def drawGrid():
     for x in range(0, WIDTH, TILESIZE):
         pg.draw.line(screen, LIGHTGRAY, (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, TILESIZE):
         pg.draw.line(screen, LIGHTGRAY, (0, y), (WIDTH, y))
 
 
-def draw_icons():
-    start_center = (goal.x * TILESIZE + TILESIZE / 2, goal.y * TILESIZE + TILESIZE / 2)
-    screen.blit(home_img, home_img.get_rect(center=start_center))
-    goal_center = (start.x * TILESIZE + TILESIZE / 2, start.y * TILESIZE + TILESIZE / 2)
-    screen.blit(cross_img, cross_img.get_rect(center=goal_center))
+def drawIcons():
+    StartCenter = (goal.x * TILESIZE + TILESIZE / 2, goal.y * TILESIZE + TILESIZE / 2)
+    screen.blit(home_img, home_img.get_rect(center=StartCenter))
+    goalCenter = (start.x * TILESIZE + TILESIZE / 2, start.y * TILESIZE + TILESIZE / 2)
+    screen.blit(cross_img, cross_img.get_rect(center=goalCenter))
 
 
 def vec2int(v):
@@ -84,7 +84,7 @@ def breadth_first_search(graph, start, end):
         current = frontier.popleft()
         if current == end:
             break
-        for next in graph.find_neighbors(current):
+        for next in graph.findNeighbors(current):
             if vec2int(next) not in path:
                 frontier.append(next)
                 path[vec2int(next)] = current - next
@@ -150,7 +150,7 @@ while running:
         x, y = node
         rect = pg.Rect(x * TILESIZE, y * TILESIZE, TILESIZE, TILESIZE)
         pg.draw.rect(screen, SPECIALGREEN, rect)
-    draw_grid()
+    drawGrid()
     g.draw()
     # draw path from start to goal
     current = start + path[vec2int(start)]
@@ -162,5 +162,5 @@ while running:
         screen.blit(img, r)
         # find next in path
         current = current + path[vec2int(current)]
-    draw_icons()
+    drawIcons()
     pg.display.flip()

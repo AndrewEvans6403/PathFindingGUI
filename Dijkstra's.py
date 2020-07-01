@@ -1,7 +1,6 @@
 import pygame as pg
 from os import path
 import heapq
-from collections import deque
 
 vec = pg.math.Vector2
 
@@ -125,7 +124,7 @@ def dijkstra(graph, start, end):
         current = frontier.get()
         if current == end:
             break
-        for next in graph.find_neighbors(vec(current)):
+        for next in graph.findNeighbors(vec(current)):
             next = vec2int(next)
             nextCost = cost[current] + graph.cost(current, next)
             if next not in cost or nextCost < cost[next]:
